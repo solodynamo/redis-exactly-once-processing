@@ -1,0 +1,24 @@
+# Binaries
+/bin
+
+# Log files
+*.log
+
+main
+
+CHANGELOG.md
+
+vendor/
+
+coverage.out
+coverage.html
+
+IMPLEMENTATION_SUMMARY.md
+
+.env
+
+.env.local
+
+.env.example
+
+.env.local.example

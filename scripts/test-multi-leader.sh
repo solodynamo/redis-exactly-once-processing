@@ -15,6 +15,16 @@ INSTANCES=3
 BASE_PORT=8080
 PIDS=()
 
+# Check for podman
+if ! command -v podman &>/dev/null; then
+    echo -e "${RED}❌ 'podman' command not found.${NC}"
+    echo -e "${YELLOW}Please install Podman to run this script.${NC}"
+    echo "For macOS, you can install it via Homebrew:"
+    echo "  brew install podman"
+    echo "Or visit the official documentation: https://podman.io/docs/installation"
+    exit 1
+fi
+
 # Cleanup function
 cleanup() {
     echo -e "\n${BLUE}🧹 Cleaning up instances...${NC}"
@@ -30,9 +40,11 @@ trap cleanup EXIT
 
 # Check if Redis is running
 if ! podman exec redis-timeout-poc redis-cli ping >/dev/null 2>&1; then
-    echo -e "${RED}❌ Redis not running. Starting...${NC}"
-    podman run -d --name redis-timeout-poc -p 6379:6379 redis:7-alpine
-    sleep 3
+    echo -e "${RED}❌ Redis container 'redis-timeout-poc' is not running or not responding.${NC}"
+    echo -e "${YELLOW}Please ensure Redis is running in a podman container named 'redis-timeout-poc'.${NC}"
+    echo "You can start it with:"
+    echo "  podman run -d --name redis-timeout-poc -p 6379:6379 redis:7-alpine"
+    exit 1
 fi
 
 # Clear Redis state
