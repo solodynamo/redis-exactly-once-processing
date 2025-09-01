@@ -1,0 +1,89 @@
+# Docker Compose configuration for Redis Timeout Tracking POC
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  timeout-tracker-phase1:
+    build: .
+    command: ./phase1
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - TIMEOUT_INTERVAL_MS=30000
+      - CHECK_INTERVAL_MS=1000
+      - POD_ID=phase1-pod-1
+      - PORT=8080
+      - LOG_LEVEL=info
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  timeout-tracker-phase2-leader:
+    build: .
+    command: ./phase2
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - TIMEOUT_INTERVAL_MS=30000
+      - CHECK_INTERVAL_MS=1000
+      - POD_ID=phase2-leader
+      - PORT=8081
+      - PHASE2_MODE=true
+      - LOG_LEVEL=info
+    ports:
+      - "8081:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  timeout-tracker-phase2-consumer1:
+    build: .
+    command: ./phase2
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - POD_ID=phase2-consumer-1
+      - PORT=8082
+      - PHASE2_MODE=true
+      - LOG_LEVEL=info
+    ports:
+      - "8082:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  timeout-tracker-phase2-consumer2:
+    build: .
+    command: ./phase2
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - POD_ID=phase2-consumer-2
+      - PORT=8083
+      - PHASE2_MODE=true
+      - LOG_LEVEL=info
+    ports:
+      - "8083:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+
+networks:
+  redis-network:
+    driver: bridge 
